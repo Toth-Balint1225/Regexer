@@ -1,0 +1,74 @@
+@startebnf OpenGroup Extended Regular Expression Specification
+
+(* OpenGroup Extended Regex Grammar specification *)
+Regex = Regex, "|", Branch 
+      | Branch
+      ;
+
+Branch = Branch, Expression
+       | Expression
+       ;
+
+Expression = Expression, DupSymbol
+           | "(", Regex, ")"
+           | OneCharacter
+           | "^"
+           | "$"
+           ;
+
+DupSymbol = "*"
+          | "+"
+          | "?"
+          | "{", ? Dup Count ?, "}"
+          | "{", ? Dup Count ?, "," , "}"
+          | "{", ? Dup Count ?, "," , ? Dup Count ? , "}"
+          ;
+
+OneCharacter = ? Token ? 
+             | "."
+             | BracketExpression
+             ;
+
+(* Bracket Expressions *)
+BracketExpression = "[", MatchingList, "]"
+                  | "[", NonMatchingList, "]"
+                  ;
+
+MatchingList = BracketList;
+NonmatchingList = "^", BracketList;
+
+BracketList = FollowList
+            | FollowList, "-"
+            ;
+
+FollowList = FollowList, ExpressionTerm
+           | ExpressionTerm
+           ;
+
+ExpressionTerm = SingleExpression
+               | RangeExpression
+               ;
+
+SingleExpression = EndRange 
+                 | CharacterClass
+                 | EquivalenceClass
+                 ;
+
+RangeExpression = StartRange, EndRange
+                | StartRange, "-"
+                ;
+
+StartRange = EndRange, "-";
+
+EndRange = ? Collation Element ?
+         | CollatingSymbol
+         ;
+
+CollatingSymbol = "[.", ? Collation Element ?, ".]"
+                | "[.", ? Meta Character ?, ".]"
+                ;
+
+EquivalenceClass = "[=", ? Collation Element ?, "=]";
+CharacterClass = "[:", ? Collation Element ?, ":]";
+
+@endebnf

@@ -1,0 +1,25 @@
+@startebnf Mathematical RegExp Syntax
+
+(* Current implementation process *)
+
+Regex = Branch, Union;
+Union = ["|", Branch, Union];
+
+Branch = Expression, Concat;
+Concat = [ "(", Regex, ")", DupSymbol, Concat
+         | ? Token ?, DupSymbol, Concat
+         | "^", Concat
+         | "$", Concat
+         ];
+
+Expression = "(", Regex, ")", DupSymbol
+           | ? Token ?, DupSymbol
+           | "^"
+           | "$"
+           ;
+DupSymbol = [ "*"
+            | "?"
+            | "+"
+            ];
+
+@endebnf

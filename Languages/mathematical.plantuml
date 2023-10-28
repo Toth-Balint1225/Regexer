@@ -1,0 +1,19 @@
+@startebnf Mathematical Regex Grammar
+
+(* Basic Mathematical Regex LL(1) Grammar *)
+
+Regex = Branch, Union;
+Union = ["|", Branch, Union];
+
+Branch = Expression, Concat;
+Concat = [ "(", Regex, ")", Star, Concat
+         |   ? Token ?, Star, Concat
+         ];
+
+Expression = "(", Regex, ")", Star
+           | ? Token ?, Star
+           ;
+Star = ["*"];
+
+
+@endebnf
