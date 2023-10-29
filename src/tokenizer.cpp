@@ -17,6 +17,12 @@ auto operator <<(std::ostream& os, Token t) -> decltype(os) {
         case Token::RParen:
             os << "[)]";
             break;
+        case Token::LBrace:
+            os << "[{]";
+            break;
+        case Token::RBrace:
+            os << "[}]";
+            break;
         case Token::Star:
             os << "[*]";
             break;
@@ -25,6 +31,18 @@ auto operator <<(std::ostream& os, Token t) -> decltype(os) {
             break;
         case Token::Optional:
             os << "[?]";
+            break;
+        case Token::DupMin:
+            os << "[Min, " << t.value.min << "]";
+            break;
+        case Token::DupExact:
+            os << "[Exact, " << t.value.min << "]";
+            break;
+        case Token::DupMinMax:
+            os << "[MinMax, " << t.value.minmax.min<< ", " << t.value.minmax.max<< "]";
+            break;
+        case Token::Comma:
+            os << "[,]";
             break;
         case Token::Empty:
             os << "[Empty]";
@@ -66,6 +84,15 @@ auto tokenize(const std::string& src) -> std::vector<Token> {
             break;
         case ')':
             res.push_back(Token(Token::RParen));
+            break;
+        case '{':
+            res.push_back(Token(Token::LBrace));
+            break;
+        case '}':
+            res.push_back(Token(Token::RBrace));
+            break;
+        case ',':
+            res.push_back(Token(Token::Comma));
             break;
         case '|':
             res.push_back(Token(Token::Union));

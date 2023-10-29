@@ -5,31 +5,48 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <sstream>
 
 /*
 Length modifier transformations
 (*): Kleene-star, base case
 (+): At least one, (regex)+ = (regex)(regex)*
 (?): Optional, (regex)? = (regex)|EMPTY
+({N}): exact number, (regex){3} = (regex)(regex)(regex)
+({N,}): minimum number, (regex){2,} = (regex)(regex)(regex)*
+({N,M}): minimum / maximum number: (regex){2,4} = (regex)(regex)((regex)|EMPTY)((regex)|EMPTY)
 */
+
 
 class Token {
 public:
+    struct MinMax {
+        unsigned min, max;
+    };
+
     enum TokenType {
         Empty,
         Union,
         Concat,
         Star,
         Plus,
+        DupExact,
+        DupMin,
+        DupMinMax,
+        Comma,
         Optional,
         Symbol,
         LParen,
         RParen,
+        LBrace,
+        RBrace,
         END,
     };
 
     union TokenValue {
         char symbol;
+        unsigned min;
+        MinMax minmax;
     };
 
     TokenType type;
@@ -39,18 +56,55 @@ public:
     : type(type)
     , value({.symbol = value})
     { }
+    
+    explicit Token(TokenType type, unsigned min)
+    : type(type)
+    , value({.min = min})
+    { }
+
+    explicit Token(TokenType type, unsigned min, unsigned max)
+    : type(type)
+    , value({.minmax = {min, max}})
+    { }
 
     explicit Token(TokenType type)
     : type(type)
-    {}
+    { }
 };
 
 auto operator <<(std::ostream& os, Token t) -> decltype(os);
 
 class SyntaxError : public std::exception {
+private:
+    std::string message;
 public:
+    explicit SyntaxError(const std::string& message)
+    : message(message)
+    { }
+
+    explicit SyntaxError()
+    : message("Syntax Error")
+    { }
+
     virtual const char* what() const noexcept override {
-        return "Syntax Error";
+        return message.c_str();
+    }
+};
+
+class CompileError : public std::exception {
+private:
+    std::string message;
+public:
+    explicit CompileError(const std::string& message)
+    : message(message)
+    { }
+
+    explicit CompileError()
+    : message("Compile Error")
+    { }
+
+    virtual const char* what() const noexcept override {
+        return message.c_str();
     }
 };
 
@@ -58,11 +112,16 @@ class Parser {
 private:
     std::vector<Token> ts;
     std::vector<Token> transformed;
+    unsigned min, max;
+    std::stringstream current_number;
     int pos = 0;
 public:
     explicit Parser(const std::vector<Token>& ts)
     : ts(ts)
     , transformed({})
+    , min(0)
+    , max(0)
+    , current_number("")
     {} 
 
     void parse() {
@@ -97,12 +156,29 @@ private:
         }
     }
 private:
+    inline auto is_digit(Token t) -> bool {
+        if (t.type != Token::TokenType::Symbol)
+            return false;
+
+        std::string digits = "01233456789";
+        return std::find(digits.begin(), digits.end(), t.value.symbol) != digits.end();
+    }
+
+    inline void reset_current() {
+        current_number.str(std::string());
+    }
+
+private:
     void Regex();
     void Union();
     void Branch();
     void Concat();
     void Expression(); 
     void DupSymbol();
+    void DupCount();
+    void MaxCount();
+    void Number();
+    void Number_I();
 };
 
 using CheckRes = std::pair<bool, std::string::iterator>;
@@ -205,6 +281,11 @@ public:
     : ts(ts)
     , stack({})
     { }
+
+    ~RegexTransformer() {
+        for (auto& regex : stack)
+            delete regex;
+    }
 
     auto to_regex() -> Regex*;
 };

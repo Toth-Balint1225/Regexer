@@ -8,18 +8,27 @@ Union = ["|", Branch, Union];
 Branch = Expression, Concat;
 Concat = [ "(", Regex, ")", DupSymbol, Concat
          | ? Token ?, DupSymbol, Concat
-         | "^", Concat
-         | "$", Concat
          ];
 
 Expression = "(", Regex, ")", DupSymbol
            | ? Token ?, DupSymbol
-           | "^"
-           | "$"
            ;
+
 DupSymbol = [ "*"
             | "?"
             | "+"
+            | "{", Number, DupCount
             ];
+
+DupCount = "}"
+         | ",", MaxCount
+         ;
+
+MaxCount = "}"
+         | Number, "}"
+         ;
+
+Number = ? Digit Token ?, Number_I;
+Number_I = [? Digit Token ?, Number_I];
 
 @endebnf

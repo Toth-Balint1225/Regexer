@@ -144,6 +144,68 @@ auto RegexTransformer::to_regex() -> Regex* {
             stack.push_back(new Union(inner, new Empty()));
             break;
         }
+        case Token::DupExact: {
+            if (token.value.min <= 0)
+                throw CompileError("Exact match duplicant count cannot be zero");
+            if (token.value.min == 1)
+                break;
+            auto inner = stack.back();
+            stack.pop_back();
+            auto loop = new Concat(inner, inner->clone());
+            for (unsigned i=2;i<token.value.min; i++) {
+                loop = new Concat(loop, inner->clone());
+            }
+            stack.push_back(loop);
+            break;
+        }
+        case Token::DupMin: {
+            if (token.value.min == 0) {
+                auto inner = stack.back();
+                stack.pop_back();
+                stack.push_back(new Star(inner));
+                break;
+            }
+            auto inner = stack.back();
+            stack.pop_back();
+            auto loop = inner;
+            for (unsigned i=0;i<token.value.min-1;i++) {
+                loop = new Concat(loop, inner->clone());
+            }
+            loop = new Concat(loop, new Star(inner->clone()));
+            stack.push_back(loop);
+            break;
+        }
+        case Token::DupMinMax: {
+            if (token.value.minmax.min > token.value.minmax.max)
+                throw CompileError("Minimum number of matches cannot be higher than maximum");
+
+            if (token.value.minmax.min == 0)
+                throw CompileError("Minimum number of matches cannot be zero.");
+
+            if (token.value.minmax.min == token.value.minmax.max) {
+                if (token.value.minmax.min == 1)
+                    break;
+                auto inner = stack.back();
+                stack.pop_back();
+                auto loop = new Concat(inner, inner->clone());
+                for (unsigned i=2;i<token.value.minmax.min; i++) {
+                    loop = new Concat(loop, inner->clone());
+                }
+                stack.push_back(loop);
+                break;
+            }
+            auto inner = stack.back();
+            stack.pop_back();
+            auto loop = inner;
+            for (unsigned i=1;i<token.value.minmax.min;i++) {
+                loop = new Concat(loop, inner->clone());
+            }
+            for (unsigned i=token.value.minmax.min;i<token.value.minmax.max;i++) {
+                loop = new Concat(loop, new Union(inner->clone(), new Empty()));
+            }
+            stack.push_back(loop);
+            break;
+        }
         default:
             break;
         }
