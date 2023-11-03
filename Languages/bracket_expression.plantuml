@@ -1,0 +1,28 @@
+@startebnf Bracket Expressions
+
+(* Simplified reference grammar *)
+
+BracketExpression = "[", MatchingList, "]"
+                  | "[", NonMatchingList, "]"
+                  ;
+
+MatchingList = BracketList;
+NonmatchingList = "^", BracketList;
+
+BracketList = {Range}-;
+
+Range = ? Token ?, "-", ? Token ?
+      | ? Token ?
+      ;
+
+(* LL(1) version *)
+BracketExpression = "[", BracketExpression_I;
+BracketExpression_I = BracketList, "]"
+                    | "^", BracketList, "]"
+                    ;
+
+BracketList = [ ? Token ?, Range, BracketList];
+
+Range = ["-", ? Token ?];
+
+@endebnf

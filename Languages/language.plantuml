@@ -7,13 +7,16 @@ Union = ["|", Branch, Union];
 
 Branch = Expression, Concat;
 Concat = [ "(", Regex, ")", DupSymbol, Concat
-         | ? Token ?, DupSymbol, Concat
+         | ? Symbol Token ?, DupSymbol, Concat
+         | "[", BracketExpression_I, DupSymbol, Concat
          ];
 
 Expression = "(", Regex, ")", DupSymbol
-           | ? Token ?, DupSymbol
+           | ? Symbol Token ?, DupSymbol
+           | BracketExpression, DupSymbol
            ;
 
+(* Duplication *)
 DupSymbol = [ "*"
             | "?"
             | "+"
@@ -30,5 +33,15 @@ MaxCount = "}"
 
 Number = ? Digit Token ?, Number_I;
 Number_I = [? Digit Token ?, Number_I];
+
+(* Simplified Bracket Expressions *)
+BracketExpression = "[",  BracketExpression_I;
+BracketExpression_I = "^", ? Symbol Token ?, Range, BracketList, "]"
+                    | ? Symbol Token ?, Range, BracketList, "]" 
+                    ;
+
+BracketList = [ ? Symbol Token ?, Range, BracketList];
+
+Range = ["-", ? Symbol Token ?];
 
 @endebnf

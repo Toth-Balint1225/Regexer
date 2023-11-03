@@ -34,7 +34,12 @@ void Parser::Concat() {
         transformed.push_back(Token(Token::Concat));
         Concat();
     }
-    //std::cout << ". ";
+    else if (expect(Token::LBracket)) {
+        BracketExpression_I();
+        DupSymbol();
+        transformed.push_back(Token(Token::Concat));
+        Concat();
+    }
 }
 
 void Parser::Expression() {
@@ -46,6 +51,9 @@ void Parser::Expression() {
     else if (expect(Token::Symbol)) {
         // std::cout << ts[pos-1].value.symbol << " ";
         transformed.push_back(Token(Token::Symbol, ts[pos-1].value.symbol));
+        DupSymbol();
+    } else {
+        BracketExpression();
         DupSymbol();
     }
 }
@@ -106,5 +114,50 @@ void Parser::Number_I() {
             throw SyntaxError("Syntax Error: Expected numerical value in quantifier");
         current_number << matched.value.symbol;
         Number_I();
+    }
+}
+
+void Parser::BracketExpression() {
+    match(Token::LBracket);
+    BracketExpression_I();
+}
+
+void Parser::BracketExpression_I() {
+    if (expect(Token::Caret)) {
+        auto matched = ts[pos];
+        match(Token::Symbol);
+        transformed.push_back(Token(Token::Symbol, matched.value.symbol));
+        Range();
+        BracketList();
+        match(Token::RBracket);
+        transformed.push_back(Token(Token::BracketExpr));
+        transformed.push_back(Token(Token::Negate));
+    } else {
+        auto matched = ts[pos];
+        match(Token::Symbol);
+        transformed.push_back(Token(Token::Symbol, matched.value.symbol));
+        Range();
+        BracketList();
+        match(Token::RBracket);
+        transformed.push_back(Token(Token::BracketExpr));
+    }
+}
+
+void Parser::BracketList() {
+    auto matched = ts[pos];
+    if (expect(Token::Symbol)) {
+        transformed.push_back(Token(Token::Symbol, matched.value.symbol));
+        Range();
+        transformed.push_back(Token(Token::BracketConcat));
+        BracketList();
+    }
+}
+
+void Parser::Range() {
+    if (expect(Token::Hyphen)) {
+        auto matched = ts[pos];
+        match(Token::Symbol);
+        transformed.push_back(Token(Token::Symbol, matched.value.symbol));
+        transformed.push_back(Token(Token::BracketRange));
     }
 }

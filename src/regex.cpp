@@ -102,6 +102,18 @@ std::vector<Token> Empty::reverse_polish() const {
     return {Token(Token::Empty)};
 }
 
+CheckRes Negate::check(const std::string::iterator& iter) const {
+    return {false, iter};
+}
+
+Negate* Negate::clone() const {
+    return new Negate(this->value->clone());
+}
+
+std::vector<Token> Negate::reverse_polish() const {
+    return {};
+}
+
 auto RegexTransformer::to_regex() -> Regex* {
     for (auto token : ts) {
         switch (token.type)
@@ -204,6 +216,36 @@ auto RegexTransformer::to_regex() -> Regex* {
                 loop = new Concat(loop, new Union(inner->clone(), new Empty()));
             }
             stack.push_back(loop);
+            break;
+        }
+        case Token::BracketRange: {
+            auto end = stack.back();
+            stack.pop_back();
+            auto start = stack.back();
+            stack.pop_back();
+            Symbol* end_sym = (Symbol*)end;
+            Symbol* start_sym = (Symbol*)start;
+
+            if (end_sym->sym <= start_sym->sym)
+                throw CompileError("Range end must be a higher character than start.");
+            
+            auto acc = new Union(start_sym, end_sym);
+            for (char sym = start_sym->sym + 1; sym < end_sym->sym; sym++) {
+                // TODO: left off here
+                acc = new Union(acc, new Symbol(sym));
+            }
+            stack.push_back(acc);
+            break;
+        }
+        case Token::BracketConcat: {
+            auto right = stack.back();
+            stack.pop_back();
+            auto left = stack.back();
+            stack.pop_back();
+            stack.push_back(new Union(left, right));
+            break;
+        }
+        case Token::BracketExpr: {
             break;
         }
         default:

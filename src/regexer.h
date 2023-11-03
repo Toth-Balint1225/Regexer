@@ -40,6 +40,14 @@ public:
         RParen,
         LBrace,
         RBrace,
+        Caret,
+        Hyphen,
+        LBracket,
+        RBracket,
+        BracketRange,
+        BracketConcat,
+        Negate,
+        BracketExpr,
         END,
     };
 
@@ -179,6 +187,10 @@ private:
     void MaxCount();
     void Number();
     void Number_I();
+    void BracketExpression();
+    void BracketExpression_I();
+    void BracketList();
+    void Range();
 };
 
 using CheckRes = std::pair<bool, std::string::iterator>;
@@ -190,6 +202,8 @@ public:
     virtual CheckRes check(const std::string::iterator& iter) const = 0;
     virtual Regex* clone() const = 0;
     virtual std::vector<Token> reverse_polish() const = 0;
+    
+    friend class RegexTransformer;
 };
 
 
@@ -205,6 +219,8 @@ public:
     virtual CheckRes check(const std::string::iterator& iter) const override;
     virtual Symbol* clone() const override;
     virtual std::vector<Token> reverse_polish() const override;
+
+    friend class RegexTransformer;
 };
 
 class Star : public Regex {
@@ -268,6 +284,19 @@ public:
 
     virtual CheckRes check(const std::string::iterator& iter) const override;
     virtual Empty* clone() const override;
+    virtual std::vector<Token> reverse_polish() const override;
+};
+
+class Negate : public Regex {
+private:
+    Regex* value;
+public:
+    explicit Negate(Regex* value) 
+    : value(value)
+    { }
+
+    virtual CheckRes check(const std::string::iterator& iter) const override;
+    virtual Negate* clone() const override;
     virtual std::vector<Token> reverse_polish() const override;
 };
 

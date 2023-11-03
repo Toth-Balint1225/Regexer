@@ -53,7 +53,11 @@ auto main(int argc, char** argv) -> int {
     auto src = std::string(argv[2]);
     auto check_res = regex->check(src.begin());
     
-    std::cout << "Result: " << check_res << std::endl;
+    std::cout << "Result: {" << check_res.first << ", ";
+    for (auto it = check_res.second; it != src.end(); ++it) {
+        std::cout << *it;
+    }
+    std::cout << "}" << std::endl;
 
     // std::cout << src << std::endl;
     std::cout << "Matched: ";
@@ -64,4 +68,5 @@ auto main(int argc, char** argv) -> int {
     std::cout << std::endl;
 
     delete regex;
+    return 0;
 }
