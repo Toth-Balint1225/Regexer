@@ -1,0 +1,49 @@
+menu "Build config"
+	choice BUILD_MODE
+		bool "Build Mode"
+		default DEBUG
+
+		config DEBUG
+			bool "Debug"
+			help
+				No optimizations, debug flags and address sanitizer, C++ 20 standard.
+
+		config RELEASE
+			bool "Release"
+			help
+				O2 level optimization, no debug flags, address sanitizer, C++ 20 standard.
+				Warnings are treated as errors.
+	endchoice
+
+	choice LOG_LEVEL
+		bool "Log level"
+		default C_LOG_LEVEL_INFO
+
+		config C_LOG_LEVEL_INFO
+			bool "Info"
+			help
+				Info - Displays all log levels (DEBUG, INFO and ERROR).
+
+		config C_LOG_LEVEL_DEBUG
+			bool "Debug"
+			help
+				Debug - Displays INFO and ERROR level logs.
+
+		config C_LOG_LEVEL_ERROR
+			bool "Error"
+			help
+				Error - Displays only the ERROR level logs.
+
+		config C_LOG_LEVEL_NOLOG
+			bool "None"
+			help
+				None - All logs are turned off.
+	endchoice
+
+	config LOG_LEVEL
+		int
+			default LOG_LEVEL_INFO if C_LOG_LEVEL_INFO
+			default LOG_LEVEL_DEBUG if C_LOG_LEVEL_DEBUG
+			default LOG_LEVEL_ERROR if C_LOG_LEVEL_ERROR
+			default LOG_LEVEL_NONE if C_LOG_LEVEL_NOLOG
+endmenu

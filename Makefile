@@ -1,23 +1,44 @@
-cc := g++ -Wall -Werror -Wpedantic -std=c++20 -g -fsanitize=address
+cc := g++ 
+debug_flags := -Wall -Werror -Wpedantic -Wextra -std=c++20 -g -fsanitize=address
+release_flags := -O2 -Wall -Werror -Wpedantic -Wextra -Werror -std=c++20 -fsanitize=address
 
-# OBJECT ARTIFACTS #
-sources := $(shell find src/ -name *.cpp)
-headers := $(shell find src/ -name *.h)
-objects := $(patsubst src/%.cpp, target/obj/%.o, $(sources))
 
-default: regexer
+# KCONFIG #
+CONFIG := .config
+include $(CONFIG)
 
-run: target/regexer
+ifeq ($(CONFIG_DEBUG), y)
+cflags := $(debug_flags)
+endif
+
+ifeq ($(CONFIG_RELEASE), y)
+cflags := $(release_flags)
+endif
+
+ifneq ($(CONFIG_LOG_LEVEL),LOG_LEVEL_NONE)
+cflags += -D$(CONFIG_LOG_LEVEL)
+endif
+
+src := $(shell find src/ -name *.cpp)
+obj := $(patsubst src/%.cpp, target/obj/%.o, $(src))
+
+
+exe := target/regexer
+
+run: $(exe)
 	@./$< "(a|b)*c" "abbabac"
 
-$(objects): target/obj/%.o: src/%.cpp
-	${cc} -c $< -o $@
+$(obj): target/obj/%.o: src/%.cpp
+	@mkdir -p $(dir $@)
+	$(cc) $(cflags) -c $< -o $@
 
-regexer: $(objects)
-	${cc} $^ -o target/$@
+$(exe): $(obj)
+	$(cc) $(cflags) $^ -o $@
 
+.PHONY: clean
 clean: 
-	@rm -rf target/obj/*.o
+	rm -rf target
 
-purge: 
-	@rm -rf target/
+.PHONY: menuconfig
+menuconfig: Kconfig
+	kconfig-mconf $<
